@@ -70,7 +70,7 @@ class Value:
         out._backward=_backward
         return out
 
-    def backward(self):
+    def topo_sort(self):
         topo=[]
         visited=set()
         def build_topo(v):
@@ -80,20 +80,16 @@ class Value:
                     build_topo(child)
                 topo.append(v)
         build_topo(self)
+        return topo
+
+    def backward(self):
+        topo = self.topo_sort()
         self.grad=1
         for node in reversed(topo):
             node._backward()
 
     def zero_grads(self):
-        topo=[]
-        visited=set()
-        def build_topo(v):
-            if v not in visited:
-                visited.add(v)
-                for child in v._prev:
-                    build_topo(child)
-                topo.append(v)
-        build_topo(self)
+        topo = self.topo_sort()
         for node in topo:
             node.grad=0
 

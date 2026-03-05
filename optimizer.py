@@ -26,15 +26,17 @@ class GD_Optimizer:
                     weight.value -= self.learning_rate * weight.grad
         return network
 
-Eva = GD_Optimizer(learning_rate=0.01)
+if __name__ == "__main__":
 
-network = Network([2, 3, 2])
-inputs = [Value(1), Value(2)]
-label = 0
+    Eva = GD_Optimizer(learning_rate=0.01)
 
-for i in range(10):
-    print("\nBackproping..\n")
-    loss = Eva.loss(network, inputs, label)
-    network = Eva.update_weights(network, loss)
-    loss.zero_grads()
-    network.print(1)
+    network = Network([2, 3, 2])
+    inputs = [Value(1), Value(2)]
+    label = 0
+
+    for i in range(10):
+        print("\nBackproping..\n")
+        loss = Eva.loss(network, inputs, label)
+        network = Eva.update_weights(network, loss)
+        loss.zero_grads()
+        network.print(1)
