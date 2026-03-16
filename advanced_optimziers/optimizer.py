@@ -3,22 +3,22 @@ from NeuralNetwork import Network
 
 class GD_Optimizer:
     def __init__(self, learning_rate=0.01):
-        self.learning_rate = learning_rate # speed of learning, often between 0.01 and 0.0001
+        self.learning_rate = learning_rate
 
-    def cross_enthropy_with_intiger_labels(self, p, label): # Actual loss function, not really important
+    def cross_enthropy_with_intiger_labels(self, p, label):
         sum = Value(0)
         for i in range(len(p)):
             sum += Value(-int(i == label)) * p[i].log()
         return sum
 
-    def loss(self, network, inputs, labels): # helper function
+    def loss(self, network, inputs, labels):
         output = network.forward(inputs)
         print(f"Output: {output}")
         loss = self.cross_enthropy_with_intiger_labels(output, labels)
         print(f"Loss: {loss}")
         return loss
 
-    def update_weights(self,network,loss): # gradient descent step
+    def update_weights(self,network,loss):
         loss.backward()
         for layer in network.layers:
             for row in layer:

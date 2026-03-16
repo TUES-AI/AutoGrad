@@ -1,54 +1,76 @@
 import math
 
 class Value:
-    def __init__(self, value, _parents=()):
+    def __init__(self, value, _parents=(), _op=''):
         self.value=value
         self.grad=0
         self._backward=lambda: None
         self._prev=set(_parents)
     
-    def __repr__(self): # prints the value and the gradient
+    def __repr__(self):
         return f"V:{self.value} G:{self.grad}"
     
-    def __add__(self,other): # A + B
-        out = Value(self.value+other.value,(self,other))
+    def __add__(self,other):
+        out = Value(self.value+other.value,(self,other),'+')
         def _backward():
             self.grad+=out.grad * 1
             other.grad+=out.grad * 1
         out._backward=_backward
         return out
+
+    def __sub__(self,other):
+        out = Value(self.value-other.value,(self,other),'-')
+        def _backward():
+            self.grad+=out.grad * 1
+            other.grad+=out.grad * (-1)
+        out._backward=_backward
+        return out
     
-    def __mul__(self,other): # A * B
-        out = Value(self.value*other.value,(self,other))
+    def __mul__(self,other):
+        out = Value(self.value*other.value,(self,other),'*')
         def _backward():
             self.grad+=other.value*out.grad
             other.grad+=self.value*out.grad
         out._backward=_backward
         return out
     
-    def __pow__(self,value:int | float): # A ** {scalar}
-        out = Value(self.value**value,(self,))
+    def __pow__(self,value:int | float):
+        out = Value(self.value**value,(self,),f'**{value}')
         def _backward():
             self.grad+=value*(self.value**(value-1))*out.grad
         out._backward=_backward
         return out
     
-    def __truediv__(self,other): # A / B
-        out = Value(self.value*(other.value**(-1)),(self,other))
+    # def __truediv__(self,value:int | float):
+    #     out = Value(self.value*(value**(-1)),(self,),f'/{value}')
+    #     def _backward():
+    #         self.grad+=value**(-1)*out.grad
+    #     out._backward=_backward
+    #     return out
+    def __truediv__(self,other):
+        out = Value(self.value*(other.value**(-1)),(self,other),f'/{other.value}')
         def _backward():
             self.grad+=other.value**(-1)*out.grad
             other.grad+=(-1)*(self.value*(other.value**(-2)))*out.grad
         out._backward=_backward
         return out
 
-    def relu(self): # max(0,A)
-        out = Value(0 if self.value<0 else self.value,(self,))
+    def __rtruediv__(self,other):
+        out = Value(other.value*(self.value**(-1)),(self,other),f'{other.value}/{self.value}')
+        def _backward():
+            self.grad+=(-1)*(other.value*(self.value**(-2)))*out.grad
+            other.grad+=(self.value**(-1))*out.grad
+        out._backward=_backward
+        return out
+
+    def relu(self):
+        out = Value(0 if self.value<0 else self.value,(self,),'ReLU')
         def _backward():
             self.grad+=(out.value>0)*out.grad
         out._backward=_backward
         return out
 
-    def topo_sort(self): # used to get the order for backpropagation
+    def topo_sort(self):
         topo=[]
         visited=set()
         def build_topo(v):
@@ -60,26 +82,26 @@ class Value:
         build_topo(self)
         return topo
 
-    def backward(self): # call backward functions in reverse order to get the gradients
+    def backward(self):
         topo = self.topo_sort()
         self.grad=1
         for node in reversed(topo):
             node._backward()
 
-    def zero_grads(self): # set all gradients to zero, useful for training loops
+    def zero_grads(self):
         topo = self.topo_sort()
         for node in topo:
             node.grad=0
 
-    def __rpow__(self,value:int | float): # {scalar} ** A (used in e^x)
-        out = Value(value**self.value,(self,))
+    def __rpow__(self,value:int | float):
+        out = Value(value**self.value,(self,),f'exp({self.value})')
         def _backward():
             self.grad+=value**self.value*out.grad*math.log(value)
         out._backward=_backward
         return out
 
-    def log(self): # log(A)
-        out = Value(math.log(self.value),(self,))
+    def log(self):
+        out = Value(math.log(self.value),(self,),'log')
         def _backward():
             self.grad+=(1/self.value)*out.grad
         out._backward=_backward
